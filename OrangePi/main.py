@@ -137,7 +137,7 @@ def on_message(mqttc, obj, msg):
     data = json.loads(msg.payload)
     
     # Extract field7 as integers
-    topic_required_temp_value = int(float(data.get('field6', 0)))
+    topic_required_temp_value = int(float(data.get('field1', 0)))
 
 def on_subscribe(mqttc, obj, mid, reason_code_list, properties):
     print("Subscribed: "+str(mid)+" "+str(reason_code_list))
@@ -197,15 +197,15 @@ distance_thread = threading.Thread(target=measure_distance, daemon=True)
 distance_thread.start()
 
 #----- start mqtt connection ----#
-mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="LzIIOwAuGSwaFzInGwQ4PCo")
-mqttc.username_pw_set("LzIIOwAuGSwaFzInGwQ4PCo", "uPxk9Tg7VxhgULFqfIctn5q0")
+mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="ChgAGx0oCSk4BycVPCANAzQ")
+mqttc.username_pw_set("ChgAGx0oCSk4BycVPCANAzQ", "k/PbFlQ5JzYrB/bZxk/WfP3L")
 mqttc.on_message = on_message
 mqttc.on_connect = on_connect
 mqttc.on_subscribe = on_subscribe
 # Uncomment to enable debug messages
 mqttc.on_log = on_log
 mqttc.connect("mqtt3.thingspeak.com", 1883, 60)
-mqttc.subscribe("channels/2777434/subscribe", 0)
+mqttc.subscribe("channels/2792381/subscribe", 0)
 mqttc.loop_start()
 
 try:
@@ -226,11 +226,13 @@ try:
             motion_detected_publish = motion_detected
         print(f"+++--- The current distance = {required_temp_publish} ---+++")
 
-        # Publish it to thingspeak:
-        payload = "field1=" + str(cpu_percent_publish) + "&field2=" + str(ram_percent_publish) + "&field3=" + str(distance_publish) + "&field4=" + str(bmp280_temp_publish) + "&field5=" + str(bmp280_pressure_publish) + "&field6=" + str(required_temp_publish)
+        # Publish sensor data to thingspeak:
+        payload = "field1=" + str(bmp280_temp_publish)
+        mqttc.publish("channels/2792379/publish", payload)
         
-        mqttc.publish("channels/2777434/publish", payload)
-        
+        # publish required temp to thingspeak
+        payload_required_temp = "field1=" + str(required_temp_publish)
+        mqttc.publish("channels/2792381/publish", payload_required_temp)
         if topic_required_temp_value > (bmp280_temp_publish + 0.5):
             wiringpi.digitalWrite(16,0)
             wiringpi.digitalWrite(15,1)
