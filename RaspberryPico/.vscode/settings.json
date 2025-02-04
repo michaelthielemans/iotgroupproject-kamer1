@@ -9,5 +9,6 @@
         "/Users/michaelthielemans/.vscode/extensions/wmerkens.vscode-circuitpython-v2-0.2.8/stubs",
         "/Users/michaelthielemans/Library/Application Support/Code/User/globalStorage/wmerkens.vscode-circuitpython-v2/bundle/20250103/adafruit-circuitpython-bundle-py-20250103/lib"
     ],
-    "circuitpython.board.version": null
+    "circuitpython.board.version": null,
+    "cmake.sourceDirectory": "/Users/michaelthielemans/projects/IoT-Projects/IoT-GroupProject-repos/iotgroupproject-kamer1/RaspberryPico/micropython/adc_console"
 }
