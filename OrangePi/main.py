@@ -20,8 +20,6 @@ IR_device_path = '/dev/input/event6'   # Replace '/dev/input/event6' with your I
 distance = 0.0
 distance_thread_lock = threading.Lock()
 required_temp = 20
-topic_required_temp_value = 20
-topic_required_temp_value2 = 20
 required_temp_lock = threading.Lock()  # To ensure thread-safe access to 'value'
 motion_detector = False
 motion_detected_lock = threading.Lock()
@@ -131,19 +129,23 @@ def on_connect(mqttc, obj, flags, reason_code, properties):
     print("reason_code: "+str(reason_code))
 
 def on_message(mqttc, obj, msg):
-    global topic_required_temp_value
-
-    print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
+    global required_temp
+    #print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
     data = json.loads(msg.payload)
-    
+    print("\n")
+    print("----New message received: ---- \n")
+    print("data in json format:\n")
+    print(data)
+    print('\n')
     # Extract field7 as integers
-    topic_required_temp_value = int(float(data.get('field1', 0)))
+    required_temp = int(float(data.get('field1', 0)))
 
 def on_subscribe(mqttc, obj, mid, reason_code_list, properties):
     print("Subscribed: "+str(mid)+" "+str(reason_code_list))
 
 def on_log(mqttc, obj, level, string):
-    print(string)
+    print("-------- new logs message -------")
+    #print(string)
 
 def measure_distance():
     global distance
@@ -184,7 +186,7 @@ traffic_thread.start()
 button_thread = threading.Thread(target=handle_buttons, daemon=True)
 button_thread.start()
 
-# start the dedicated thread for the network detection
+# start the dedicated thread for motion detection
 motion_detect_thread = threading.Thread(target=motion_detection, daemon=True)
 motion_detect_thread.start()
 
@@ -212,8 +214,6 @@ try:
     while True: # Main thread's
 
         # pull all metrics and put into a variable
-        cpu_percent_publish = psutil.cpu_percent(interval=5)
-        ram_percent_publish = psutil.virtual_memory().percent
         bmp280_temp_publish = bmp280.get_temperature()
         print(f"+++--- The current temp = {bmp280_temp_publish} ---+++")
         bmp280_pressure_publish = bmp280.get_pressure()
@@ -224,7 +224,6 @@ try:
             distance_publish = distance
         with motion_detected_lock:
             motion_detected_publish = motion_detected
-        print(f"+++--- The current distance = {required_temp_publish} ---+++")
 
         # Publish sensor data to thingspeak:
         payload = "field1=" + str(bmp280_temp_publish)
@@ -233,10 +232,11 @@ try:
         # publish required temp to thingspeak
         payload_required_temp = "field1=" + str(required_temp_publish)
         mqttc.publish("channels/2792381/publish", payload_required_temp)
-        if topic_required_temp_value > (bmp280_temp_publish + 0.5):
+        print("This is the published payload  "+str(payload_required_temp))
+        if required_temp > (bmp280_temp_publish + 0.5):
             wiringpi.digitalWrite(16,0)
             wiringpi.digitalWrite(15,1)
-        elif topic_required_temp_value < (bmp280_temp_publish - 0.5):
+        elif required_temp < (bmp280_temp_publish - 0.5):
             wiringpi.digitalWrite(15,0)
             wiringpi.digitalWrite(16,1)
         else:
